@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Integración Numérica - Trabajo realizado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="row">
+            <!-- Columna 1: Descripción -->
+            <div class="col-md-6">
+                <h4>🛠️ Problema del mundo real</h4>
+                <p>Para calcular el <strong>trabajo</strong> realizado por una fuerza variable \( F(x) = 5x² + 2x \)
+                    desde \( x = 0 \) hasta \( x = 4 \), se utiliza la fórmula:</p>
+                <pre>
+W = ∫₀⁴ (5x² + 2x) dx
+        </pre>
+                <p>Usaremos el <strong>método del trapecio</strong> con <code>n = 8</code> subintervalos.</p>
+
+                <button id="resolverBtn" class="btn btn-warning mt-3">📐 Calcular integral</button>
+
+                <!-- Resultado final -->
+                <div id="resultadoFinal" class="alert alert-info mt-4 d-none"></div>
+            </div>
+
+            <!-- Columna 2: Solución -->
+            <div class="col-md-6">
+                <h4>📋 Cálculo numérico</h4>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>i</th>
+                            <th>xᵢ</th>
+                            <th>f(xᵢ)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla"></tbody>
+                </table>
+                <canvas id="grafica" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function f(x) {
+            return 5 * x * x + 2 * x;
+        }
+
+        function metodoTrapecio(a, b, n) {
+            const h = (b - a) / n;
+            let suma = 0;
+            let tabla = [];
+
+            for (let i = 0; i <= n; i++) {
+                let xi = a + i * h;
+                let fxi = f(xi);
+
+                tabla.push({ i, xi, fxi });
+
+                if (i === 0 || i === n) {
+                    suma += fxi;
+                } else {
+                    suma += 2 * fxi;
+                }
+            }
+
+            let integral = (h / 2) * suma;
+            return { integral, tabla };
+        }
+
+        function mostrarTabla(tabla) {
+            const tbody = document.getElementById("tabla");
+            tbody.innerHTML = "";
+            tabla.forEach(row => {
+                tbody.innerHTML += `
+          <tr>
+            <td>${row.i}</td>
+            <td>${row.xi.toFixed(4)}</td>
+            <td>${row.fxi.toFixed(4)}</td>
+          </tr>
+        `;
+            });
+        }
+
+        let chart = null;
+        function graficar(tabla) {
+            const ctx = document.getElementById("grafica").getContext("2d");
+            const labels = tabla.map(p => p.xi.toFixed(2));
+            const valores = tabla.map(p => p.fxi);
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'F(x) = 5x² + 2x',
+                        data: valores,
+                        borderColor: 'orange',
+                        backgroundColor: 'rgba(255,165,0,0.3)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'x' } },
+                        y: { title: { display: true, text: 'F(x)' } }
+                    }
+                }
+            });
+        }
+
+        document.getElementById("resolverBtn").addEventListener("click", () => {
+            const { integral, tabla } = metodoTrapecio(0, 4, 8);
+            mostrarTabla(tabla);
+            graficar(tabla);
+
+            const divResultado = document.getElementById("resultadoFinal");
+            divResultado.innerHTML = `🔧 Trabajo aproximado: <strong>${integral.toFixed(6)}</strong> unidades de trabajo.`;
+            divResultado.classList.remove("d-none");
+        });
+    </script>
+</body>
+
+</html>
