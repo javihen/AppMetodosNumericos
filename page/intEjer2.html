@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Interpolación de Lagrange</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-light p-4">
+
+    <div class="container">
+        <div class="row">
+            <!-- Columna del problema -->
+            <div class="col-md-6 mb-4">
+                <h3>🏙️ Problema: Estimación de población en 2015</h3>
+                <p>Se conoce la población en años específicos:</p>
+                <table class="table table-bordered text-center table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Año</th>
+                            <th>Población</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2000</td>
+                            <td>120,000</td>
+                        </tr>
+                        <tr>
+                            <td>2010</td>
+                            <td>150,000</td>
+                        </tr>
+                        <tr>
+                            <td>2020</td>
+                            <td>195,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>Queremos estimar la población en el año <strong>2015</strong> usando interpolación de Lagrange.</p>
+            </div>
+
+            <!-- Columna de la solución -->
+            <div class="col-md-6">
+                <h3>📐 Solución con Lagrange</h3>
+                <div class="mb-3">
+                    <label class="form-label">Año a estimar:</label>
+                    <input type="number" id="inputX" class="form-control" value="2015" min="2000" max="2020">
+                </div>
+
+                <button class="btn btn-primary mb-3" onclick="resolver()">Calcular</button>
+                <div id="resultado" class="alert alert-success mt-3"></div>
+                <div id="tablaIteraciones" class="table-responsive mt-4"></div>
+                <canvas id="grafico" height="300" class="mt-4"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const datos = [
+            { x: 2000, y: 120000 },
+            { x: 2010, y: 150000 },
+            { x: 2020, y: 195000 }
+        ];
+
+        let grafico;
+
+        function lagrangeInterpolacion(x, puntos) {
+            let n = puntos.length;
+            let resultado = 0;
+            let iteraciones = [];
+
+            for (let i = 0; i < n; i++) {
+                let xi = puntos[i].x;
+                let yi = puntos[i].y;
+
+                let Li = 1;
+                let denominador = "";
+                let numerador = "";
+
+                for (let j = 0; j < n; j++) {
+                    if (j !== i) {
+                        Li *= (x - puntos[j].x) / (xi - puntos[j].x);
+                        numerador += `(x - ${puntos[j].x}) `;
+                        denominador += `(${xi} - ${puntos[j].x}) `;
+                    }
+                }
+
+                let termino = yi * Li;
+                resultado += termino;
+
+                iteraciones.push({
+                    i: i,
+                    xi: xi,
+                    yi: yi,
+                    Li: Li.toFixed(5),
+                    yiLi: termino.toFixed(2)
+                });
+            }
+
+            return { resultado, iteraciones };
+        }
+
+        function resolver() {
+            const x = parseFloat(document.getElementById("inputX").value);
+            const { resultado, iteraciones } = lagrangeInterpolacion(x, datos);
+
+            // Mostrar resultado
+            document.getElementById("resultado").innerHTML = `Población estimada en ${x}: <strong>${resultado.toFixed(0)} habitantes</strong>`;
+
+            // Mostrar tabla
+            let tablaHTML = `
+      <h5>Tabla de Iteraciones (Lagrange)</h5>
+      <table class="table table-bordered text-center table-sm">
+        <thead class="table-light">
+          <tr><th>i</th><th>xᵢ</th><th>yᵢ</th><th>Lᵢ(x)</th><th>yᵢ·Lᵢ(x)</th></tr>
+        </thead>
+        <tbody>
+    `;
+            iteraciones.forEach(row => {
+                tablaHTML += `<tr>
+        <td>${row.i}</td>
+        <td>${row.xi}</td>
+        <td>${row.yi}</td>
+        <td>${row.Li}</td>
+        <td>${row.yiLi}</td>
+      </tr>`;
+            });
+            tablaHTML += '</tbody></table>';
+            document.getElementById("tablaIteraciones").innerHTML = tablaHTML;
+
+            // Graficar
+            const ctx = document.getElementById("grafico").getContext("2d");
+            if (grafico) grafico.destroy();
+
+            // Datos para curva
+            const labels = [];
+            const values = [];
+            for (let i = 2000; i <= 2020; i++) {
+                const { resultado } = lagrangeInterpolacion(i, datos);
+                labels.push(i);
+                values.push(resultado.toFixed(2));
+            }
+
+            grafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Población estimada",
+                            data: values,
+                            borderColor: "blue",
+                            backgroundColor: "lightblue",
+                            tension: 0.2
+                        },
+                        {
+                            label: "Datos conocidos",
+                            data: datos.map(p => ({ x: p.x, y: p.y })),
+                            type: 'scatter',
+                            backgroundColor: "red",
+                            pointRadius: 6,
+                            showLine: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: "Año" } },
+                        y: { title: { display: true, text: "Población" } }
+                    },
+                    plugins: { legend: { position: "bottom" } }
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>
