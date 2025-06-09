@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secante - Punto de Equilibrio Económico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="row">
+            <!-- Columna 1: Descripción -->
+            <div class="col-md-6">
+                <h4>📊 Problema del mundo real</h4>
+                <p>En economía, el punto de equilibrio se alcanza cuando el ingreso es igual al costo. Se modela con:
+                </p>
+                <pre>
+f(x) = x² - 6x + 4 = 0
+        </pre>
+                <p>Buscamos la raíz de esta función usando el <strong>método de la secante</strong> con
+                    <code>x₀ = 0</code> y <code>x₁ = 2</code>.
+                </p>
+
+                <button id="resolverBtn" class="btn btn-primary mt-3">🔄 Calcular solución</button>
+
+                <!-- Resultado final -->
+                <div id="resultadoFinal" class="alert alert-info mt-4 d-none"></div>
+            </div>
+
+            <!-- Columna 2: Solución -->
+            <div class="col-md-6">
+                <h4>🧮 Solución numérica</h4>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Iteración</th>
+                            <th>x</th>
+                            <th>f(x)</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla"></tbody>
+                </table>
+                <canvas id="grafica" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función f(x)
+        function f(x) {
+            return x * x - 6 * x + 4;
+        }
+
+        // Método de la Secante
+        function metodoSecante(x0, x1, tol = 0.0001, maxIter = 20) {
+            let iteraciones = [];
+            let x_prev = x0;
+            let x_curr = x1;
+
+            for (let i = 0; i < maxIter; i++) {
+                let f_prev = f(x_prev);
+                let f_curr = f(x_curr);
+
+                if (f_curr - f_prev === 0) {
+                    alert("División por cero en la secante.");
+                    break;
+                }
+
+                let x_next = x_curr - f_curr * (x_curr - x_prev) / (f_curr - f_prev);
+                let error = Math.abs(x_next - x_curr);
+
+                iteraciones.push({
+                    i: i + 1,
+                    x: x_curr,
+                    fx: f_curr,
+                    error
+                });
+
+                if (error < tol) break;
+
+                x_prev = x_curr;
+                x_curr = x_next;
+            }
+
+            return iteraciones;
+        }
+
+        // Mostrar tabla
+        function mostrarTabla(iteraciones) {
+            const tbody = document.getElementById("tabla");
+            tbody.innerHTML = "";
+            iteraciones.forEach(row => {
+                tbody.innerHTML += `
+          <tr>
+            <td>${row.i}</td>
+            <td>${row.x.toFixed(6)}</td>
+            <td>${row.fx.toExponential(2)}</td>
+            <td>${row.error.toExponential(2)}</td>
+          </tr>
+        `;
+            });
+        }
+
+        // Graficar
+        let chart = null;
+        function graficar(iteraciones) {
+            const ctx = document.getElementById("grafica").getContext("2d");
+            const labels = iteraciones.map(row => row.i);
+            const valores = iteraciones.map(row => row.fx);
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'f(x) por iteración',
+                        data: valores,
+                        borderColor: 'blue',
+                        backgroundColor: 'lightblue',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'Iteración' } },
+                        y: { title: { display: true, text: 'f(x)' } }
+                    }
+                }
+            });
+        }
+
+        // Acción del botón
+        document.getElementById("resolverBtn").addEventListener("click", () => {
+            const resultados = metodoSecante(0, 2);
+            if (resultados.length > 0) {
+                mostrarTabla(resultados);
+                graficar(resultados);
+
+                const final = resultados[resultados.length - 1];
+                const mensaje = `📌 Punto de equilibrio aproximado: <strong>x = ${final.x.toFixed(6)}</strong> con error <strong>${final.error.toExponential(2)}</strong> tras ${final.i} iteraciones.`;
+                const divResultado = document.getElementById("resultadoFinal");
+                divResultado.innerHTML = mensaje;
+                divResultado.classList.remove("d-none");
+            }
+        });
+    </script>
+</body>
+
+</html>
