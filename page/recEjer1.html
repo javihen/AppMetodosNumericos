@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raíces por Bisección</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="row">
+            <!-- Columna 1: Descripción -->
+            <div class="col-md-6">
+                <h4>🔍 Problema del mundo real</h4>
+                <p>Un ingeniero desea calcular la velocidad del flujo de agua en una tubería usando la ecuación:</p>
+                <pre>
+f(v) = v³ + 2v² - 5 = 0
+        </pre>
+                <p>Se busca una raíz de esta ecuación en el intervalo <code>[1, 2]</code> usando el <strong>método de
+                        bisección</strong>.</p>
+                <button id="resolverBtn" class="btn btn-primary mt-3">🔢 Generar solución</button>
+            </div>
+
+            <!-- Columna 2: Solución -->
+            <div class="col-md-6">
+                <h4>🧮 Solución numérica</h4>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Iteración</th>
+                            <th>a</th>
+                            <th>b</th>
+                            <th>m</th>
+                            <th>f(m)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla"></tbody>
+                </table>
+                <canvas id="grafica" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función a evaluar
+        function f(v) {
+            return Math.pow(v, 3) + 2 * Math.pow(v, 2) - 5;
+        }
+
+        // Método de Bisección
+        function biseccion(a, b, tol = 0.0001, maxIter = 100) {
+            let datos = [];
+            let fa = f(a);
+            let fb = f(b);
+
+            if (fa * fb > 0) {
+                alert("f(a) y f(b) deben tener signos opuestos.");
+                return [];
+            }
+
+            for (let i = 0; i < maxIter; i++) {
+                let m = (a + b) / 2;
+                let fm = f(m);
+                datos.push({ i: i + 1, a, b, m, fm });
+
+                if (Math.abs(fm) < tol || (b - a) / 2 < tol) break;
+
+                if (fa * fm < 0) {
+                    b = m;
+                    fb = fm;
+                } else {
+                    a = m;
+                    fa = fm;
+                }
+            }
+            return datos;
+        }
+
+        // Mostrar tabla
+        function mostrarTabla(iteraciones) {
+            const tbody = document.getElementById("tabla");
+            tbody.innerHTML = "";
+            iteraciones.forEach(row => {
+                tbody.innerHTML += `
+          <tr>
+            <td>${row.i}</td>
+            <td>${row.a.toFixed(4)}</td>
+            <td>${row.b.toFixed(4)}</td>
+            <td>${row.m.toFixed(4)}</td>
+            <td>${row.fm.toExponential(2)}</td>
+          </tr>
+        `;
+            });
+        }
+
+        // Mostrar gráfico
+        let chart = null;
+        function graficar(iteraciones) {
+            const ctx = document.getElementById("grafica").getContext("2d");
+            const labels = iteraciones.map(row => row.i);
+            const valores = iteraciones.map(row => row.fm);
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'f(m) por iteración',
+                        data: valores,
+                        borderColor: 'blue',
+                        backgroundColor: 'lightblue',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'Iteración' } },
+                        y: { title: { display: true, text: 'f(m)' } }
+                    }
+                }
+            });
+        }
+
+        // Evento del botón
+        document.getElementById("resolverBtn").addEventListener("click", function () {
+            const resultados = biseccion(1, 2);
+            if (resultados.length > 0) {
+                mostrarTabla(resultados);
+                graficar(resultados);
+            }
+        });
+    </script>
+</body>
+
+</html>
