@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crecimiento Poblacional - Runge-Kutta 4</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="row">
+            <!-- Columna 1: Descripción -->
+            <div class="col-md-6">
+                <h4>🧬 Crecimiento Poblacional</h4>
+                <p>
+                    La población sigue la ecuación logística:
+                </p>
+                <pre>
+dP/dt = r P (1 - P/K)
+r = 0.3, K = 1000, P(0) = 50
+        </pre>
+                <p>
+                    Estimamos P(t) desde t=0 hasta t=20 usando <strong>Runge-Kutta 4</strong> con paso h=1.
+                </p>
+                <button id="resolverBtn" class="btn btn-primary mt-3">🧮 Calcular población</button>
+
+                <!-- Resultado final -->
+                <div id="resultadoFinal" class="alert alert-info mt-4 d-none"></div>
+            </div>
+
+            <!-- Columna 2: Solución -->
+            <div class="col-md-6">
+                <h4>📊 Resultados numéricos</h4>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>t</th>
+                            <th>P(t)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla"></tbody>
+                </table>
+                <canvas id="grafica" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function f(t, P, r, K) {
+            return r * P * (1 - P / K);
+        }
+
+        function rungeKutta4(t0, P0, h, tFinal, r, K) {
+            const resultados = [];
+            let t = t0;
+            let P = P0;
+
+            while (t <= tFinal) {
+                resultados.push({ t, P });
+
+                // k1
+                const k1 = h * f(t, P, r, K);
+                // k2
+                const k2 = h * f(t + h / 2, P + k1 / 2, r, K);
+                // k3
+                const k3 = h * f(t + h / 2, P + k2 / 2, r, K);
+                // k4
+                const k4 = h * f(t + h, P + k3, r, K);
+
+                P += (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+                t += h;
+            }
+            return resultados;
+        }
+
+        function mostrarTabla(datos) {
+            const tbody = document.getElementById("tabla");
+            tbody.innerHTML = "";
+            datos.forEach(({ t, P }) => {
+                tbody.innerHTML += `<tr><td>${t}</td><td>${P.toFixed(2)}</td></tr>`;
+            });
+        }
+
+        let chart = null;
+        function graficar(datos) {
+            const ctx = document.getElementById("grafica").getContext("2d");
+            const labels = datos.map(d => d.t);
+            const valores = datos.map(d => d.P);
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Población P(t)",
+                        data: valores,
+                        borderColor: "green",
+                        backgroundColor: "rgba(0,128,0,0.2)",
+                        fill: true,
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: "Tiempo (t)" } },
+                        y: { title: { display: true, text: "Población" } }
+                    }
+                }
+            });
+        }
+
+        document.getElementById("resolverBtn").addEventListener("click", () => {
+            const datos = rungeKutta4(0, 50, 1, 20, 0.3, 1000);
+            mostrarTabla(datos);
+            graficar(datos);
+
+            const divResultado = document.getElementById("resultadoFinal");
+            divResultado.innerHTML = `🌱 Población aproximada en t=20: <strong>${datos[datos.length - 1].P.toFixed(2)}</strong>`;
+            divResultado.classList.remove("d-none");
+        });
+    </script>
+</body>
+
+</html>
